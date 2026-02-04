@@ -128,34 +128,6 @@
             color: #e94560;
         }
         
-        .toggle-group {
-            display: flex;
-            gap: 8px;
-        }
-        
-        .toggle-btn {
-            flex: 1;
-            padding: 8px 12px;
-            background: #0f3460;
-            border: none;
-            color: #888;
-            font-family: 'Roboto', sans-serif;
-            font-size: 11px;
-            font-weight: 500;
-            cursor: pointer;
-            border-radius: 4px;
-            transition: all 0.2s;
-        }
-        
-        .toggle-btn.active {
-            background: #e94560;
-            color: white;
-        }
-        
-        .toggle-btn:hover:not(.active) {
-            background: #1a4a7a;
-        }
-        
         #legend {
             margin-top: 16px;
         }
@@ -423,9 +395,6 @@
             color: #666;
         }
         
-        .paper-year {
-        }
-        
         .paper-type {
             color: #7f8c9a;
         }
@@ -499,16 +468,20 @@
         #menu-toggle {
             display: none;
             position: absolute;
-            top: 10px;
-            left: 10px;
+            bottom: 20px;
+            right: 20px;
             z-index: 60;
             background: #16213e;
             border: 1px solid #0f3460;
             color: #e94560;
-            padding: 10px 14px;
-            border-radius: 6px;
-            font-size: 14px;
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            font-size: 20px;
             cursor: pointer;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
         }
         
         #menu-toggle:hover {
@@ -519,7 +492,6 @@
         @media (max-width: 900px) {
             #header {
                 padding: 12px 16px;
-                padding-left: 60px;
             }
             
             #header h1 {
@@ -531,7 +503,7 @@
             }
             
             #menu-toggle {
-                display: block;
+                display: flex;
             }
             
             #sidebar {
@@ -589,7 +561,7 @@
         </div>
         
         <div id="main">
-            <button id="menu-toggle">☰ Controls</button>
+            <button id="menu-toggle">☰</button>
             
             <div id="sidebar">
                 <div class="sidebar-title">Controls</div>
@@ -597,8 +569,8 @@
                 <div class="control-group">
                     <label>Authors Shown</label>
                     <div class="slider-container">
-                        <input type="range" id="author-slider" min="10" max="200" value="75">
-                        <span class="slider-value" id="author-count">75</span>
+                        <input type="range" id="author-slider" min="10" max="200" value="150">
+                        <span class="slider-value" id="author-count">150</span>
                     </div>
                 </div>
                 
@@ -607,14 +579,6 @@
                     <div class="slider-container">
                         <input type="range" id="gravity-slider" min="1" max="10" value="7">
                         <span class="slider-value" id="gravity-label">Strong</span>
-                    </div>
-                </div>
-                
-                <div class="control-group">
-                    <label>Edge Thickness</label>
-                    <div class="toggle-group">
-                        <button class="toggle-btn active" data-edge="weighted">Weighted</button>
-                        <button class="toggle-btn" data-edge="uniform">Uniform</button>
                     </div>
                 </div>
                 
@@ -663,9 +627,8 @@
         
         const colorScale = d3.scaleOrdinal(d3.schemeTableau10);
         
-        let currentN = 75;
-        let edgeMode = 'weighted';
-        let gravityLevel = 7; // 1-10, higher = stronger pull to center
+        let currentN = 150;
+        let gravityLevel = 7;
         let selectedNode = null;
         let selectedEdge = null;
         let currentNodes = [];
@@ -698,7 +661,6 @@
         const nodeGroup = g.append('g').attr('class', 'nodes');
         
         function getGravityStrength() {
-            // gravity 1 = 0.01, gravity 10 = 0.15
             return 0.005 + (gravityLevel * 0.015);
         }
         
@@ -711,14 +673,6 @@
         
         function getNodeRadius(d) {
             return Math.sqrt(d.paper_count) * 4 + 5;
-        }
-        
-        function getEdgeWidth(d) {
-            if (edgeMode === 'weighted') {
-                return Math.sqrt(d.weight) * 1.5 + 0.5;
-            } else {
-                return 1.5;
-            }
         }
         
         function getColor(institution) {
@@ -765,13 +719,13 @@
             const linkEnter = link.enter()
                 .append('line')
                 .attr('class', 'link')
+                .attr('stroke-width', d => Math.sqrt(d.weight) * 1.5 + 0.5)
                 .on('click', handleEdgeClick)
                 .on('mouseover', showEdgeTooltip)
                 .on('mousemove', moveTooltip)
                 .on('mouseout', hideTooltip);
             
-            const linkMerge = linkEnter.merge(link)
-                .attr('stroke-width', d => getEdgeWidth(d));
+            const linkMerge = linkEnter.merge(link);
             
             const node = nodeGroup.selectAll('.node')
                 .data(nodes, d => d.id);
@@ -1154,19 +1108,6 @@
             gravityLevel = parseInt(this.value);
             document.getElementById('gravity-label').textContent = getGravityLabel(gravityLevel);
             updateGravity();
-        });
-        
-        document.querySelectorAll('[data-edge]').forEach(btn => {
-            btn.addEventListener('click', function() {
-                document.querySelectorAll('[data-edge]').forEach(b => b.classList.remove('active'));
-                this.classList.add('active');
-                edgeMode = this.dataset.edge;
-                
-                linkGroup.selectAll('.link')
-                    .transition()
-                    .duration(300)
-                    .attr('stroke-width', d => getEdgeWidth(d));
-            });
         });
         
         document.querySelector('.panel-close').addEventListener('click', () => {
